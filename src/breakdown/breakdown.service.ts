@@ -13,11 +13,15 @@ export class BreakdownService {
 
   async create(createBearkdownDto: createBearkdownDto) {
     try {
-      this.breakdownRepository.save(createBearkdownDto);
+      await this.breakdownRepository.save(createBearkdownDto);
       return { ok: true };
     } catch (error) {
       console.error(error);
       return { ok: false, error };
     }
+  }
+
+  async getAllBreakdown(id: number) {
+    return await this.breakdownRepository.find({ where: { id } });
   }
 }
