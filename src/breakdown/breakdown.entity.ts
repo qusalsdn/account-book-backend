@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Auth } from 'src/auth/auth.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Breakdown {
@@ -19,4 +20,7 @@ export class Breakdown {
 
   @Column()
   memo: string;
+
+  @ManyToOne(() => Auth, (auth) => auth.breakdown, { eager: false })
+  auth: Auth;
 }

@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Breakdown } from 'src/breakdown/breakdown.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Auth {
@@ -10,4 +11,7 @@ export class Auth {
 
   @Column()
   password: string;
+
+  @OneToMany(() => Breakdown, (breakdown) => breakdown.auth, { eager: true })
+  breakdown: Breakdown[];
 }
