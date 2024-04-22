@@ -35,10 +35,11 @@ export class BreakdownService {
     auth: Auth,
     date: string,
     type: 'all' | 'income' | 'spending',
+    search: string,
   ) {
     // 중복을 제거한 날짜 추출
     const currentDateList = await this.breakdownRepository.query(
-      `select distinct date_format(date, '%Y-%m-%d') as currentDateList from breakdown where date like '%${date}%'${type !== 'all' ? ` and type='${type}'` : ''} order by currentDateList desc`,
+      `select distinct date_format(date, '%Y-%m-%d') as currentDateList from breakdown where authId=${auth.id} and date like '%${date}%'${type !== 'all' ? ` and type='${type}'` : ''}${search && ` and (category like '%${search}%' or memo like '%${search}%')`} order by currentDateList desc`,
     );
 
     const breakdown = {};
@@ -48,21 +49,16 @@ export class BreakdownService {
       breakdown[`${currentDate}`] = {};
 
       // 부합하는 day의 가계부 내역 추출
-      const data = await this.breakdownRepository.find({
-        where: {
-          auth,
-          date: Like(`%${currentDate}%`),
-          type: type !== 'all' ? type : null,
-        },
-        order: { date: 'DESC' },
-      });
+      const data = await this.breakdownRepository.query(
+        `select * from breakdown where authId=${auth.id} and date like '%${currentDate}%'${type !== 'all' ? ` and type='${type}'` : ''}${search && ` and (category like '%${search}%' or memo like '%${search}%')`} order by date desc`,
+      );
       breakdown[`${currentDate}`]['data'] = data;
 
       // 부합하는 day의 수입 내역 추출
       if (type !== 'spending') {
         const [{ 'sum(amount)': dayIncome }] =
           await this.breakdownRepository.query(
-            `select sum(amount) from breakdown where type='income' and date like '%${currentDate}%'`,
+            `select sum(amount) from breakdown where authId=${auth.id} and type='income' and date like '%${currentDate}%'${search && ` and (category like '%${search}%' or memo like '%${search}%')`}`,
           );
         breakdown[`${currentDate}`]['income'] = Number(dayIncome);
       }
@@ -71,7 +67,7 @@ export class BreakdownService {
       if (type !== 'income') {
         const [{ 'sum(amount)': daySpending }] =
           await this.breakdownRepository.query(
-            `select sum(amount) from breakdown where type='spending' and date like '%${currentDate}%'`,
+            `select sum(amount) from breakdown where authId=${auth.id} and type='spending' and date like '%${currentDate}%'${search && ` and (category like '%${search}%' or memo like '%${search}%')`}`,
           );
         breakdown[`${currentDate}`]['spending'] = Number(daySpending);
       }

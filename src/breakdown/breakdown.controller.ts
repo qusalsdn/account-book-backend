@@ -27,7 +27,8 @@ export class BreakdownController {
     @Req() req,
     @Query('date') date: string,
     @Query('type') type: 'all' | 'income' | 'spending',
+    @Query('search') search: string,
   ) {
-    return this.bearkDownService.getAllBreakdown(req.user, date, type);
+    return this.bearkDownService.getAllBreakdown(req.user, date, type, search);
   }
 }
