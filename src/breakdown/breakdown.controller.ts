@@ -23,7 +23,11 @@ export class BreakdownController {
 
   @Get('/')
   @UseGuards(AuthGuard())
-  getAllBreakdown(@Req() req, @Query('date') date: string) {
-    return this.bearkDownService.getAllBreakdown(req.user, date);
+  getAllBreakdown(
+    @Req() req,
+    @Query('date') date: string,
+    @Query('type') type: 'all' | 'income' | 'spending',
+  ) {
+    return this.bearkDownService.getAllBreakdown(req.user, date, type);
   }
 }

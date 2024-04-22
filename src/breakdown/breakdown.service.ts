@@ -31,10 +31,14 @@ export class BreakdownService {
     }
   }
 
-  async getAllBreakdown(auth: Auth, date: string) {
+  async getAllBreakdown(
+    auth: Auth,
+    date: string,
+    type: 'all' | 'income' | 'spending',
+  ) {
     // 중복을 제거한 날짜 추출
     const currentDateList = await this.breakdownRepository.query(
-      `select distinct date_format(date, '%Y-%m-%d') as currentDateList from breakdown where date like '%${date}%' order by currentDateList desc`,
+      `select distinct date_format(date, '%Y-%m-%d') as currentDateList from breakdown where date like '%${date}%'${type !== 'all' ? ` and type='${type}'` : ''} order by currentDateList desc`,
     );
 
     const breakdown = {};
@@ -48,24 +52,29 @@ export class BreakdownService {
         where: {
           auth,
           date: Like(`%${currentDate}%`),
+          type: type !== 'all' ? type : null,
         },
         order: { date: 'DESC' },
       });
       breakdown[`${currentDate}`]['data'] = data;
 
       // 부합하는 day의 수입 내역 추출
-      const [{ 'sum(amount)': dayIncome }] =
-        await this.breakdownRepository.query(
-          `select sum(amount) from breakdown where type='income' and date like '%${currentDate}%'`,
-        );
-      breakdown[`${currentDate}`]['income'] = Number(dayIncome);
+      if (type !== 'spending') {
+        const [{ 'sum(amount)': dayIncome }] =
+          await this.breakdownRepository.query(
+            `select sum(amount) from breakdown where type='income' and date like '%${currentDate}%'`,
+          );
+        breakdown[`${currentDate}`]['income'] = Number(dayIncome);
+      }
 
       // 부합하는 day의 지출 내역 추출
-      const [{ 'sum(amount)': daySpending }] =
-        await this.breakdownRepository.query(
-          `select sum(amount) from breakdown where type='spending' and date like '%${currentDate}%'`,
-        );
-      breakdown[`${currentDate}`]['spending'] = Number(daySpending);
+      if (type !== 'income') {
+        const [{ 'sum(amount)': daySpending }] =
+          await this.breakdownRepository.query(
+            `select sum(amount) from breakdown where type='spending' and date like '%${currentDate}%'`,
+          );
+        breakdown[`${currentDate}`]['spending'] = Number(daySpending);
+      }
     }
 
     // 해당 month의 총 수입 추출
