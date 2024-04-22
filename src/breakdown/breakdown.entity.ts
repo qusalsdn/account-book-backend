@@ -13,7 +13,7 @@ export class Breakdown {
   category: string;
 
   @Column()
-  amount: number;
+  amount: string;
 
   @Column()
   date: string;

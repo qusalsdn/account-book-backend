@@ -32,12 +32,47 @@ export class BreakdownService {
   }
 
   async getAllBreakdown(auth: Auth, date: string) {
-    const breakdown = await this.breakdownRepository.find({
-      where: { auth, date: Like(`%${date}%`) },
-    });
+    // 중복을 제거한 날짜 추출
+    const currentDateList = await this.breakdownRepository.query(
+      `select distinct date_format(date, '%Y-%m-%d') as currentDateList from breakdown where date like '%${date}%' order by currentDateList desc`,
+    );
+
+    const breakdown = {};
+    // 해당 month의 각 day에 접근하기 위해 반복문 실행
+    for (const key in currentDateList) {
+      const { currentDateList: currentDate } = currentDateList[key];
+      breakdown[`${currentDate}`] = {};
+
+      // 부합하는 day의 가계부 내역 추출
+      const data = await this.breakdownRepository.find({
+        where: {
+          auth,
+          date: Like(`%${currentDate}%`),
+        },
+        order: { date: 'DESC' },
+      });
+      breakdown[`${currentDate}`]['data'] = data;
+
+      // 부합하는 day의 수입 내역 추출
+      const [{ 'sum(amount)': dayIncome }] =
+        await this.breakdownRepository.query(
+          `select sum(amount) from breakdown where type='income' and date like '%${currentDate}%'`,
+        );
+      breakdown[`${currentDate}`]['income'] = Number(dayIncome);
+
+      // 부합하는 day의 지출 내역 추출
+      const [{ 'sum(amount)': daySpending }] =
+        await this.breakdownRepository.query(
+          `select sum(amount) from breakdown where type='spending' and date like '%${currentDate}%'`,
+        );
+      breakdown[`${currentDate}`]['spending'] = Number(daySpending);
+    }
+
+    // 해당 month의 총 수입 추출
     const [{ 'sum(amount)': income }] = await this.breakdownRepository.query(
       `select sum(amount) from breakdown where authId=${auth.id} and type='income' and date like '%${date}%'`,
     );
+    // 해당 month의 총 지출 추출
     const [{ 'sum(amount)': spending }] = await this.breakdownRepository.query(
       `select sum(amount) from breakdown where authId=${auth.id} and type='spending' and date like '%${date}%'`,
     );

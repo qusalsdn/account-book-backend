@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class createBearkdownDto {
   @IsNotEmpty()
@@ -10,9 +10,8 @@ export class createBearkdownDto {
   category: string;
 
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
-  amount: number;
+  @IsString()
+  amount: string;
 
   @IsNotEmpty()
   date: string;
