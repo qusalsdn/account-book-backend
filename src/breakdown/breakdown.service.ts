@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { Breakdown } from './breakdown.entity';
 import { createBearkdownDto } from './dto/create-breakdown.dto';
 import { Auth } from 'src/auth/auth.entity';
@@ -31,8 +31,21 @@ export class BreakdownService {
     }
   }
 
-  async getAllBreakdown(auth: Auth) {
-    const breakdown = await this.breakdownRepository.find({ where: { auth } });
-    return { ok: true, breakdown };
+  async getAllBreakdown(auth: Auth, date: string) {
+    const breakdown = await this.breakdownRepository.find({
+      where: { auth, date: Like(`%${date}%`) },
+    });
+    const [{ 'sum(amount)': income }] = await this.breakdownRepository.query(
+      `select sum(amount) from breakdown where authId=${auth.id} and type='income' and date like '%${date}%'`,
+    );
+    const [{ 'sum(amount)': spending }] = await this.breakdownRepository.query(
+      `select sum(amount) from breakdown where authId=${auth.id} and type='spending' and date like '%${date}%'`,
+    );
+    return {
+      ok: true,
+      breakdown,
+      income: Number(income),
+      spending: Number(spending),
+    };
   }
 }
