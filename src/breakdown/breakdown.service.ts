@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Breakdown } from './breakdown.entity';
 import { createBearkdownDto } from './dto/create-breakdown.dto';
 import { Auth } from 'src/auth/auth.entity';
+
+interface Analysis {
+  category: string;
+  amount: number;
+  color?: string;
+}
 
 @Injectable()
 export class BreakdownService {
@@ -87,5 +93,66 @@ export class BreakdownService {
       income: Number(income),
       spending: Number(spending),
     };
+  }
+
+  async analysis(auth: Auth, date: string, type: string) {
+    // 랜덤 색상 추출
+    const getRandomColor = (): string => {
+      const red = Math.floor(Math.random() * 256);
+      const green = Math.floor(Math.random() * 256);
+      const blue = Math.floor(Math.random() * 256);
+      return `rgba(${red}, ${green}, ${blue}, 0.5)`;
+    };
+
+    // 데이터의 길이만큼 랜덤 색상 추출
+    const getRandomColorsForArrayLength = (
+      length: number,
+      breakdown?: Analysis[],
+    ): string[] => {
+      const colors: string[] = [];
+      for (let i = 0; i < length; i++) {
+        const color = getRandomColor();
+        colors.push(color);
+        breakdown[i].color = color;
+      }
+      return colors;
+    };
+
+    const dataExtraction = async (type: string, label: string) => {
+      // 중복 제거한 카테고리 추출
+      const breakdown: Analysis[] = await this.breakdownRepository.query(
+        `select distinct(category) from breakdown where authId=${auth.id} and date like '%${date}%' and type='${type}'`,
+      );
+      // 카테고리에 해당하는 수입, 지출 내역 추출
+      for (const obj of breakdown) {
+        const [{ amount }] = await this.breakdownRepository.query(
+          `select sum(amount) as amount from breakdown where authId=${auth.id} and date like '%${date}%' and type='${type}' and category='${obj.category}'`,
+        );
+        obj.amount = amount;
+      }
+      breakdown.sort((a, b) => b.amount - a.amount);
+      const labels = breakdown.map((item) => item.category);
+      const amount = breakdown.map((item) => item.amount);
+      const chartData = {
+        labels,
+        datasets: [
+          {
+            label,
+            data: amount,
+            backgroundColor: getRandomColorsForArrayLength(
+              labels.length,
+              breakdown,
+            ),
+          },
+        ],
+      };
+      return { chartData, breakdown };
+    };
+
+    if (type === 'income') {
+      return dataExtraction(type, '수입');
+    } else if (type === 'spending') {
+      return dataExtraction(type, '지출');
+    }
   }
 }
