@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -12,17 +13,16 @@ import { BreakdownService } from './breakdown.service';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('breakdown')
+@UseGuards(AuthGuard())
 export class BreakdownController {
   constructor(private bearkDownService: BreakdownService) {}
 
   @Post('/create')
-  @UseGuards(AuthGuard())
   create(@Body() createBearkdownDto: createBearkdownDto, @Req() req: any) {
     return this.bearkDownService.create(createBearkdownDto, req.user);
   }
 
   @Get('/')
-  @UseGuards(AuthGuard())
   getAllBreakdown(
     @Req() req: any,
     @Query('date') date: string,
@@ -33,7 +33,6 @@ export class BreakdownController {
   }
 
   @Get('/analysis')
-  @UseGuards(AuthGuard())
   analysis(
     @Req() req: any,
     @Query('date') date: string,
