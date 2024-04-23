@@ -101,6 +101,18 @@ export class BreakdownService {
     }
   }
 
+  async getBreakdownById(auth: Auth, id: string) {
+    try {
+      const breakdown = await this.breakdownRepository.findOne({
+        where: { auth, id: Number(id) },
+      });
+      return { ok: true, breakdown };
+    } catch (error) {
+      console.error(error);
+      return { ok: false, error };
+    }
+  }
+
   async analysis(auth: Auth, date: string, type: string) {
     try {
       // 랜덤 색상 추출
@@ -153,7 +165,7 @@ export class BreakdownService {
             },
           ],
         };
-        return { chartData, breakdown };
+        return { ok: true, chartData, breakdown };
       };
 
       if (type === 'income') {
@@ -161,6 +173,19 @@ export class BreakdownService {
       } else if (type === 'spending') {
         return dataExtraction(type, '지출');
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+      return { ok: false, error };
+    }
+  }
+
+  async update(id: string, createBearkdownDto: createBearkdownDto) {
+    try {
+      await this.breakdownRepository.update(id, createBearkdownDto);
+      return { ok: true };
+    } catch (error) {
+      console.error(error);
+      return { ok: false };
+    }
   }
 }

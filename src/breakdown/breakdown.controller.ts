@@ -32,6 +32,11 @@ export class BreakdownController {
     return this.bearkDownService.getAllBreakdown(req.user, date, type, search);
   }
 
+  @Get('/update/:id')
+  getBreakdownById(@Req() req: any, @Param('id') id: string) {
+    return this.bearkDownService.getBreakdownById(req.user, id);
+  }
+
   @Get('/analysis')
   analysis(
     @Req() req: any,
@@ -39,5 +44,13 @@ export class BreakdownController {
     @Query('type') type: string,
   ): any {
     return this.bearkDownService.analysis(req.user, date, type);
+  }
+
+  @Post('/update/:id')
+  update(
+    @Param('id') id: string,
+    @Body() createBearkdownDto: createBearkdownDto,
+  ) {
+    return this.bearkDownService.update(id, createBearkdownDto);
   }
 }
