@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -52,5 +53,10 @@ export class BreakdownController {
     @Body() createBearkdownDto: createBearkdownDto,
   ) {
     return this.bearkDownService.update(id, createBearkdownDto);
+  }
+
+  @Delete('/delete/:id')
+  delete(@Req() req: any, @Param('id') id: string) {
+    return this.bearkDownService.delete(req.user, id);
   }
 }

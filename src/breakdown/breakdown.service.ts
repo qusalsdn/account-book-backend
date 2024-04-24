@@ -188,4 +188,14 @@ export class BreakdownService {
       return { ok: false };
     }
   }
+
+  async delete(auth: Auth, id: string) {
+    try {
+      await this.breakdownRepository.delete({ auth, id: Number(id) });
+      return { ok: true };
+    } catch (error) {
+      console.error(error);
+      return { ok: false };
+    }
+  }
 }
